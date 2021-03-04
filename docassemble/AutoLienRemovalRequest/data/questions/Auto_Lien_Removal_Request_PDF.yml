@@ -1,0 +1,366 @@
+include:
+  - docassemble.AssemblyLine:al_package.yml
+  - docassemble.MassAccess:massaccess.yml
+---
+comment: |
+  The metadata section controls the tab title and saved interview title. You can delete this section if you include this YAML file in another YAML file.
+metadata:
+  title: |
+    Auto Lien Removal Request
+  short title: |
+    Auto lien removal
+  tags:
+    - MO-00-00-00-00
+---
+comment: |
+  This section is used by AssemblyLine to control how some of the questions work.
+mandatory: True
+code: |
+  interview_metadata # make sure we initialize the object
+  if not defined("interview_metadata['Auto_Lien_Removal_Request_PDF']"):
+    interview_metadata.initializeObject('Auto_Lien_Removal_Request_PDF')
+  interview_metadata['Auto_Lien_Removal_Request_PDF'].update({
+    'title': 'Auto Lien Removal Request',
+    'short title': 'Auto lien removal',
+    'description': 'A form letter to help you request that a creditor removes a lien from your vehicle in the state of Maine.',
+    'original_form': '',
+    'allowed courts': [
+    ],
+    'categories': [
+      'MO-00-00-00-00',
+    ],
+    'logic block variable': 'Auto_Lien_Removal_Request_PDF',
+    'attachment block variable': 'Auto_Lien_Removal_Request_PDF_attachment',
+    'typical role': 'unknown',
+  })
+---
+code: |
+  interview_short_title = 'Write an Auto Lien Removal Request Letter'
+---
+code: |
+  al_form_type = 'letter'
+---
+features:
+  navigation: True
+---
+sections:
+  - review_Auto_Lien_Removal_Request_PDF: Review your answers
+---
+objects:
+  - users: ALPeopleList.using(ask_number=True,target_number=1)
+
+---
+###################### Main order ######################
+mandatory: True
+comment: |
+  This block includes the logic for standalone interviews.
+  Delete mandatory: True to include in another interview
+id: main_order_Auto_Lien_Removal_Request_PDF
+code: |
+  al_intro_screen
+  Auto_Lien_Removal_Request_PDF_intro
+  # Interview order block has form-specific logic controlling order/branching
+  interview_order_Auto_Lien_Removal_Request_PDF
+  signature_date
+  # Save (anonymized) interview statistics.
+  store_variables_snapshot(data={'zip': users[0].address.zip})
+  Auto_Lien_Removal_Request_PDF_preview_question  # Pre-canned preview screen
+  basic_questions_signature_flow
+  users[0].signature
+  Auto_Lien_Removal_Request_PDF_download
+---
+#################### Interview order #####################
+comment: |
+  Controls order and branching logic of questions in the interview
+id: interview_order_Auto_Lien_Removal_Request_PDF
+code: |
+  # Set the allowed courts for this interview
+  allowed_courts = interview_metadata["Auto_Lien_Removal_Request_PDF"]["allowed courts"]
+  nav.set_section('review_Auto_Lien_Removal_Request_PDF')
+  # Below sets the user_role by asking a question.
+  # You can set user_role directly instead to either 'plaintiff' or 'defendant'
+  user_ask_role
+  creditor_name1
+  docket_numbers.gather()
+  vehicle_make
+  set_progress(25.0)
+  vehicle_purchase_yes
+  vehicle_purchase_date
+  signed_date
+  interview_order_Auto_Lien_Removal_Request_PDF = True
+---
+comment: |
+  This question is used to introduce your interview. Please customize
+id: Auto Lien Removal Request
+continue button field: Auto_Lien_Removal_Request_PDF_intro
+question: |
+  Auto Lien Removal Request
+subquestion: |
+  A form letter to help you request that a creditor removes a lien from your vehicle in the state of Maine.
+---
+id: Review your form before you sign it
+continue button field: Auto_Lien_Removal_Request_PDF_preview_question
+question: |
+  Review your form before you sign it
+subquestion: |
+  Here is a preview of the form you will sign on the next page. 
+  
+   ${ al_user_bundle.as_pdf(key='preview') }
+  
+  Click the image to open it in a new tab. Click the 'Make changes' button to fix any mistakes.
+  
+  ${ action_button_html(url_action('review_Auto_Lien_Removal_Request_PDF'), label='Make changes', color='info') } 
+  
+  Remember to come back to this window to continue and sign your form.
+---
+id: Information about the Lien
+question: |
+  Information about the Lien
+fields:
+  - 'Creditor name': creditor_name1
+    maxlength: 35
+  - 'Creditor address': creditor_address
+    maxlength: 105
+  - 'Your name': user_name2
+    maxlength: 35
+  - 'Creditor name': creditor_name2
+    maxlength: 33
+  - 'How much was the judgment against you?': judgment_amount
+    datatype: currency
+    min: 0
+---
+id: Information about your vehicle
+question: |
+  Information about your vehicle
+fields:
+  - 'What is the make of the vehicle? (ex. Ford, Toyota, etc.)': vehicle_make
+    maxlength: 43
+  - 'What is the model of the vehicle? (ex. Ranger, Camry, etc.)': vehicle_model
+    maxlength: 43
+  - 'What year is the vehicle?': vehicle_year
+    datatype: number
+  - 'What is the VIN (vehicle identification number) for the vehicle?': vehicle_vin
+    datatype: number
+---
+id: Why are you requesting this loan be discharge Check all that apply
+question: |
+  Why are you requesting this loan be discharge? Check all that apply.
+fields:
+  - 'Have you purchased this vehicle outright?': vehicle_purchase_yes
+    datatype: yesno
+  - 'Are you requesting the lien be discharged because of the Blue Book value of the vehicle?': blue_book_yes
+    datatype: yesno
+  - 'Did you take out a loan to cover the purchase price of the vehicle?': vehicle_loan
+    datatype: yesno
+---
+id: Final details
+question: |
+  Final details
+fields:
+  - 'Date of vehicle purchase': vehicle_purchase_date
+    datatype: date
+  - 'Vehicle purchase price': vehicle_purchase_price
+    datatype: currency
+    min: 0
+  - "What is the vehicle's Kelley Blue Book value?": vehicle_bluebook_value
+    datatype: currency
+    min: 0
+  - 'Original amount of the vehicle loan?': vehicle_loan_amount
+    datatype: currency
+    min: 0
+  - 'Current vehicle loan balance?': vehicle_loan_balance
+    datatype: currency
+    min: 0
+  - 'Your address?': user_address
+    maxlength: 111
+  - 'Your telephone number?': user_telephone
+    datatype: number
+  - 'Bluebook attached': bluebook_attached_yes
+    datatype: yesno
+  - 'Purchase attached': purchase_attached_yes
+    datatype: yesno
+  - 'Loan attached': loan_attached_yes
+    datatype: yesno
+---
+id: Signature and Review
+question: |
+  Signature and Review
+fields:
+  - 'Date': signed_date
+    datatype: date
+---
+progress: 100
+id: download
+event: Auto_Lien_Removal_Request_PDF_download
+question: |
+  Your form is ready to download.
+subquestion: |
+  Thank you ${users}. Your form is ready to download and deliver.
+  
+  View, download and send your form below. Click the "Make changes" button to fix any mistakes. 
+  
+  ${ action_button_html(url_action('review_Auto_Lien_Removal_Request_PDF'), label='Make changes', color='info') } 
+  
+  ${ al_user_bundle.download_list_html() }
+  
+  ${ al_user_bundle.send_button_html() }
+---
+objects:
+  - Auto_Lien_Removal_Request_PDF_attachment: ALDocument.using(title="A form letter to help you request that a creditor removes a lien from your vehicle in the state of Maine.", filename="Auto_Lien_Removal_Request_PDF", enabled=True, has_addendum=False)
+---
+objects:
+  - al_user_bundle: ALDocumentBundle.using(elements=[Auto_Lien_Removal_Request_PDF_attachment], filename="Auto_Lien_Removal_Request_PDF.pdf", title="All forms to download for your records")
+  - al_court_bundle: ALDocumentBundle.using(elements=[Auto_Lien_Removal_Request_PDF_attachment], filename="Auto_Lien_Removal_Request_PDF.pdf", title="All forms to download for your records")
+---
+attachment:
+    variable name: Auto_Lien_Removal_Request_PDF_attachment[i]
+    name: Auto lien removal
+    filename: Auto-lien-removal
+    skip undefined: True
+    pdf template file: Auto_Lien_Removal_Request_PDF.pdf
+    fields: 
+      - "docket_number": ${ docket_numbers[0] }
+      # It's a signature: test which file version this is; leave empty unless it's the final version)
+      - "user_signature": ${ users[0].signature if i == 'final' else '' }
+      - "signed_date": ${ signed_date }
+      - "creditor_name1": ${ creditor_name1 }
+      - "creditor_address": ${ creditor_address }
+      - "user_name2": ${ user_name2 }
+      - "creditor_name2": ${ creditor_name2 }
+      - "user_name1": ${ user_name2 }
+      - "judgment_amount": ${ currency(judgment_amount) }
+      - "vehicle_make": ${ vehicle_make }
+      - "vehicle_model": ${ vehicle_model }
+      - "vehicle_year": ${ "{:,.2f}".format(vehicle_year) }
+      - "vehicle_vin": ${ "{:,.2f}".format(vehicle_vin) }
+      - "vehicle_purchase_date": ${ vehicle_purchase_date }
+      - "vehicle_purchase_yes": ${ vehicle_purchase_yes }
+      - "vehicle_purchase_price": ${ currency(vehicle_purchase_price) }
+      - "vehicle_bluebook_value": ${ currency(vehicle_bluebook_value) }
+      - "blue_book_yes": ${ blue_book_yes }
+      - "vehicle_loan_yes": ${ vehicle_loan }
+      - "vehicle_loan_no": ${ not vehicle_loan }
+      - "vehicle_loan_amount": ${ currency(vehicle_loan_amount) }
+      - "vehicle_loan_balance": ${ currency(vehicle_loan_balance) }
+      - "user_address": ${ user_address }
+      - "user_telephone": ${ "{:,.2f}".format(user_telephone) }
+      - "bluebook_attached_yes": ${ bluebook_attached_yes }
+      - "purchase_attached_yes": ${ purchase_attached_yes }
+      - "loan_attached_yes": ${ loan_attached_yes }
+---
+id: Auto_Lien_Removal_Request_PDF review screen
+event: review_Auto_Lien_Removal_Request_PDF
+question: |
+  Review Screen
+subquestion: |
+  Edit your answers below
+review: 
+  - Edit: signed_date
+    button: |
+      **Date**:
+      ${ signed_date }
+  - Edit: creditor_name1
+    button: |
+      **Creditor name**:
+      ${ creditor_name1 }
+  - Edit: creditor_address
+    button: |
+      **Creditor address**:
+      ${ creditor_address }
+  - Edit: user_name2
+    button: |
+      **Your name**:
+      ${ user_name2 }
+  - Edit: creditor_name2
+    button: |
+      **Creditor name**:
+      ${ creditor_name2 }
+  - Edit: user_name1
+    button: |
+      **Your name**:
+      ${ user_name1 }
+  - Edit: judgment_amount
+    button: |
+      **How much was the judgment against you?**:
+      ${ currency(judgment_amount) }
+  - Edit: vehicle_make
+    button: |
+      **What is the make of the vehicle? (ex. Ford, Toyota, etc.)**:
+      ${ vehicle_make }
+  - Edit: vehicle_model
+    button: |
+      **What is the model of the vehicle? (ex. Ranger, Camry, etc.)**:
+      ${ vehicle_model }
+  - Edit: vehicle_year
+    button: |
+      **What year is the vehicle?**:
+      ${ vehicle_year }
+  - Edit: vehicle_vin
+    button: |
+      **What is the VIN (vehicle identification number) for the vehicle?**:
+      ${ vehicle_vin }
+  - Edit: vehicle_purchase_date
+    button: |
+      **Date of vehicle purchase**:
+      ${ vehicle_purchase_date }
+  - Edit: vehicle_purchase_yes
+    button: |
+      **Have you purchased this vehicle outright?**:
+      ${ word(yesno(vehicle_purchase_yes)) }
+  - Edit: vehicle_purchase_price
+    button: |
+      **Vehicle purchase price**:
+      ${ currency(vehicle_purchase_price) }
+  - Edit: vehicle_bluebook_value
+    button: |
+      **What is the vehicle's Kelley Blue Book value?**:
+      ${ currency(vehicle_bluebook_value) }
+  - Edit: blue_book_yes
+    button: |
+      **Are you requesting the lien be discharged because of the Blue Book value of the vehicle?**:
+      ${ word(yesno(blue_book_yes)) }
+  - Edit: vehicle_loan
+    button: |
+      **Did you take out a loan to cover the purchase price of the vehicle?**:
+      ${ word(yesno(vehicle_loan)) }
+  - Edit: vehicle_loan_amount
+    button: |
+      **Original amount of the vehicle loan?**:
+      ${ currency(vehicle_loan_amount) }
+  - Edit: vehicle_loan_balance
+    button: |
+      **Current vehicle loan balance?**:
+      ${ currency(vehicle_loan_balance) }
+  - Edit: user_address
+    button: |
+      **Your address?**:
+      ${ user_address }
+  - Edit: user_telephone
+    button: |
+      **Your telephone number?**:
+      ${ user_telephone }
+  - Edit: bluebook_attached_yes
+    button: |
+      **Bluebook attached**:
+      ${ word(yesno(bluebook_attached_yes)) }
+  - Edit: purchase_attached_yes
+    button: |
+      **Purchase attached**:
+      ${ word(yesno(purchase_attached_yes)) }
+  - Edit: loan_attached_yes
+    button: |
+      **Loan attached**:
+      ${ word(yesno(loan_attached_yes)) }
+  - Edit: docket_numbers[0].name.first
+    button: |
+      **docket_numbers**
+
+      % for my_var in docket_numbers:
+        * ${ my_var }
+      % endfor
+    # NOTE: a question block with 'docket_numbers.revisit'
+    # lets the user edit all of the items at once
+  - Edit: users[0].signature
+    button: |
+      **users[0].signature**:
+      ${ users[0].signature }
